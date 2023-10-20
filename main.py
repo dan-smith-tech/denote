@@ -14,10 +14,11 @@ def extract_images_from_pdf(pdf_path, output_file, media_folder):
         for page_index, page in enumerate(doc):
             page_text = page.get_text()
 
-            if page_index == 0:
-                page_text = "# " + page_text
-            else:
-                page_text = "## " + page_text
+            if len(page_text.strip()) > 0:
+                if page_index == 0:
+                    page_text = "\n# " + page_text
+                else:
+                    page_text = "\n## " + page_text
 
             lines = page_text.split("\n")
             processed_lines = []
@@ -33,14 +34,14 @@ def extract_images_from_pdf(pdf_path, output_file, media_folder):
             for pattern, replacement in SUBSTITUTIONS:
                 page_text = re.sub(pattern, replacement, page_text)
 
-
-
             for image in page.get_images(full=True):
                 base_image = doc.extract_image(image[0])
                 image_bytes = base_image["image"]
 
                 with open(f"{media_folder}/{image[7]}.png", "wb") as image_file:
                     image_file.write(image_bytes)
+
+                page_text += "\n" + f"![img]({media_folder}/{image[7]}.png)" + "\n"
 
             out.write(page_text)
 
