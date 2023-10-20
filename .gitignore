@@ -1,5 +1,7 @@
 # Project
-media
+media/
+output.md
+*.pdf
 
 
 # Byte-compiled / optimized / DLL files
