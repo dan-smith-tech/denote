@@ -1,51 +1,40 @@
-import fitz  # PyMuPDF
-import re
+from pypdf import PdfReader
 import os
 
-SUBSTITUTIONS = [
-    ("\n", "\n\n"),
-    (re.compile("•"), "-"),
-    (re.compile("▶"), "-")
-]
+from utils.patterns import SUBSTITUTIONS, TRIMS
+from utils.string import apply_substitutions, escape_lines, title_page
+from utils.image import save_image
 
 
-def extract_images_from_pdf(pdf_path, output_file, media_folder):
-    with fitz.open(pdf_path) as doc, open(output_file, "w", encoding="utf-8") as out:
-        for page_index, page in enumerate(doc):
-            page_text = page.get_text()
+def parse_pdf_page(page, media_folder):
+    page_text = apply_substitutions(
+        escape_lines(
+            page.extract_text()
+        ),
+        SUBSTITUTIONS
+    )
 
-            if len(page_text.strip()) > 0:
-                if page_index == 0:
-                    page_text = "\n# " + page_text
-                else:
-                    page_text = "\n## " + page_text
+    for image in page.images:
+        page_text += "\n" + save_image(image, media_folder) + "\n"
 
-            lines = page_text.split("\n")
-            processed_lines = []
-            for line in lines:
-                match = re.compile(r'^([a-z].*)$').match(line)
-                if match:
-                    processed_lines[-1] += ' ' + match.group(1)
-                else:
-                    processed_lines.append(line)
+    return page_text
 
-            page_text = '\n'.join(processed_lines)
 
-            for pattern, replacement in SUBSTITUTIONS:
-                page_text = re.sub(pattern, replacement, page_text)
+def write_pdf(input_file, output_file, media_folder):
+    with (open(output_file, "w", encoding="utf-8") as out):
+        reader = PdfReader(input_file)
 
-            for image in page.get_images(full=True):
-                base_image = doc.extract_image(image[0])
-                image_bytes = base_image["image"]
+        for page_index, page in enumerate(reader.pages):
+            page_text = title_page(
+                parse_pdf_page(page, media_folder),
+                page_index
+            )
 
-                with open(f"{media_folder}/{image[7]}.png", "wb") as image_file:
-                    image_file.write(image_bytes)
-
-                page_text += "\n" + f"![img]({media_folder}/{image[7]}.png)" + "\n"
+            page_text = apply_substitutions(page_text, TRIMS)
 
             out.write(page_text)
 
 
 if __name__ == "__main__":
     os.makedirs("media", exist_ok=True)
-    extract_images_from_pdf("test.pdf", "output.md", "media")
+    write_pdf("doc.pdf", "output.md", "media")
