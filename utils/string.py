@@ -38,3 +38,19 @@ def title_page(string, page_index):
             new_string = "\n## " + string + "\n"
 
     return new_string
+
+
+def is_remote_path(path):
+    """
+    Check if the path starts with a file protocol indicating it's a remote path.
+    
+    :param path: 
+    :return: 
+    """
+
+    return (
+            path.startswith("http://") or
+            path.startswith("https://") or
+            path.startswith("ftp://") or
+            path.startswith("file://")
+    )
