@@ -1,7 +1,7 @@
+from io import BytesIO
 from pypdf import PdfReader
 import requests
 import os
-from io import BytesIO
 
 from utils.patterns import SUBSTITUTIONS, TRIMS
 from utils.string import apply_substitutions, escape_lines, title_page, is_remote_path
